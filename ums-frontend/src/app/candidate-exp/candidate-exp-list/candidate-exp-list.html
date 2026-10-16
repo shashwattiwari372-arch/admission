@@ -1,0 +1,66 @@
+<div class="form-page">
+  <div class="form-header">
+    <div>
+      <span class="eyebrow">CANDIDATE EXPERIENCE</span>
+      <h1>Work experience</h1>
+      <p>
+        {{ appId ? 'Records for application ' + appId : 'All experience records' }}
+      </p>
+    </div>
+    <button type="button" class="add-button" (click)="add()">Add experience</button>
+  </div>
+
+  @if (errorMessage) { <div class="error-message">{{ errorMessage }}</div> }
+  @if (successMessage) { <div class="success-message">{{ successMessage }}</div> }
+
+  <div class="form-card">
+    @if (loading) {
+      <p class="empty">Loading…</p>
+    } @else if (items.length === 0) {
+      <p class="empty">No experience added yet. Use "Add experience" to create the first record.</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Employer</th>
+              <th>Designation</th>
+              <th>Period</th>
+              <th>Duration</th>
+              <th>Total emoluments</th>
+              <th>Verified</th>
+              <th class="actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (i of items; track i.id) {
+              <tr>
+                <td>
+                  <strong>{{ i.employerName }}</strong>
+                  <small>{{ i.orgType }}</small>
+                </td>
+                <td>
+                  {{ i.designation }}
+                  <small>{{ i.jobType }}</small>
+                </td>
+                <td>
+                  {{ i.fromDt | date: 'dd MMM yyyy' }} –
+                  {{ i.toDt ? (i.toDt | date: 'dd MMM yyyy') : 'Present' }}
+                </td>
+                <td>{{ duration(i) }}</td>
+                <td>{{ i.totalEmoluments != null ? (i.totalEmoluments | number: '1.2-2') : '—' }}</td>
+                <td>
+                  <span class="badge" [class.badge-ok]="i.vStatus">{{ i.vStatus || 'Pending' }}</span>
+                </td>
+                <td class="actions-col">
+                  <button type="button" class="back-button small" (click)="edit(i)">Edit</button>
+                  <button type="button" class="danger-button small" (click)="remove(i)">Delete</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
