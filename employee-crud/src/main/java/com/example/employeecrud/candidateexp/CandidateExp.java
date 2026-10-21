@@ -41,7 +41,6 @@ public class CandidateExp {
     @Column(name = "orgEmail", length = 100)
     private String orgEmail;
 
-    @NotNull(message = "From date is required")
     @Column(name = "fromDt")
     private LocalDate fromDt;
 
