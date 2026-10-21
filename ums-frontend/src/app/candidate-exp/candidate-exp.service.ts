@@ -1,32 +1,32 @@
+﻿import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { CandidateExp } from './candidate-exp.model';
 
 @Injectable({ providedIn: 'root' })
 export class CandidateExpService {
   private http = inject(HttpClient);
-  private baseUrl = 'http://localhost:8080/api/candidate-exp';
+  private url = 'http://localhost:8080/api/candidate-exp';
 
   getAll(appId?: number | null): Observable<CandidateExp[]> {
     let params = new HttpParams();
-    if (appId) params = params.set('appId', appId);
-    return this.http.get<CandidateExp[]>(this.baseUrl, { params });
+    if (appId != null) params = params.set('appId', appId);
+    return this.http.get<CandidateExp[]>(this.url, { params });
   }
 
   getById(id: number): Observable<CandidateExp> {
-    return this.http.get<CandidateExp>(`${this.baseUrl}/${id}`);
+    return this.http.get<CandidateExp>(`${this.url}/${id}`);
   }
 
   create(body: CandidateExp): Observable<CandidateExp> {
-    return this.http.post<CandidateExp>(this.baseUrl, body);
+    return this.http.post<CandidateExp>(this.url, body);
   }
 
   update(id: number, body: CandidateExp): Observable<CandidateExp> {
-    return this.http.put<CandidateExp>(`${this.baseUrl}/${id}`, body);
+    return this.http.put<CandidateExp>(`${this.url}/${id}`, body);
   }
 
   delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+    return this.http.delete<void>(`${this.url}/${id}`);
   }
 }

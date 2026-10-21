@@ -1,36 +1,28 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+﻿import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-
+import { Router } from '@angular/router';
+import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
 
-  const authService = inject(AuthService);
+  const token = auth.getToken();
+  const isAuthCall = req.url.includes('/api/auth/');
 
-  const token = authService.getToken();
+  const request =
+    token && !isAuthCall
+      ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+      : req;
 
-  console.log('========== JWT INTERCEPTOR ==========');
-  console.log('URL:', req.url);
-  console.log('Token exists:', !!token);
-  console.log('Token:', token);
-
-  if (!token) {
-    console.log('No token found');
-    return next(req);
-  }
-
-  if (req.url.includes('/api/auth/')) {
-    console.log('Auth endpoint - JWT not added');
-    return next(req);
-  }
-
-  const authRequest = req.clone({
-    setHeaders: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-
-  console.log('JWT added to request');
-
-  return next(authRequest);
+  return next(request).pipe(
+    catchError((err) => {
+      if (!isAuthCall && (err.status === 401 || (err.status === 403 && !token))) {
+        auth.logout();
+        router.navigate(['/login'], { queryParams: { returnUrl: router.url } });
+      }
+      return throwError(() => err);
+    })
+  );
 };

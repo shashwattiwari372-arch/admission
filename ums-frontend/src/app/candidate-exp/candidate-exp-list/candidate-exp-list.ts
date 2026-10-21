@@ -1,6 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { CandidateExp } from '../candidate-exp.model';
 import { CandidateExpService } from '../candidate-exp.service';
 
@@ -15,11 +16,22 @@ export class CandidateExpList implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  items: CandidateExp[] = [];
   appId: number | null = null;
-  loading = true;
-  errorMessage = '';
-  successMessage = '';
+  items = signal<CandidateExp[]>([]);
+  loading = signal(true);
+  errorMessage = signal('');
+  query = signal('');
+  toDelete = signal<CandidateExp | null>(null);
+  deleting = signal(false);
+
+  filtered = computed(() => {
+    const q = this.query().trim().toLowerCase();
+    if (!q) return this.items();
+    return this.items().filter((e) =>
+      [e.employerName, e.designation, e.jobType, String(e.appId)]
+        .some((v) => (v ?? '').toLowerCase().includes(q))
+    );
+  });
 
   ngOnInit(): void {
     const appId = this.route.snapshot.queryParamMap.get('appId');
@@ -28,39 +40,58 @@ export class CandidateExpList implements OnInit {
   }
 
   load(): void {
-    this.loading = true;
-    this.api.getAll(this.appId).subscribe({
-      next: (data) => {
-        this.items = data;
-        this.loading = false;
-      },
-      error: () => {
-        this.errorMessage = 'Could not load experience records. Check that the server is running.';
-        this.loading = false;
-      },
-    });
+    this.loading.set(true);
+    this.errorMessage.set('');
+    this.api.getAll(this.appId)
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: (data) => this.items.set(Array.isArray(data) ? data : (data as any)?.content ?? []),
+        error: (err) => {
+          console.error('Load failed', err);
+          this.errorMessage.set(
+            err.status === 401 || err.status === 403
+              ? 'Your session has expired. Please log in again.'
+              : err.status === 0
+                ? 'Cannot reach the server. Check that the backend is running.'
+                : 'Could not load experience records.'
+          );
+        },
+      });
+  }
+
+  onSearch(ev: Event): void { this.query.set((ev.target as HTMLInputElement).value); }
+
+  duration(e: CandidateExp): string {
+    const parts: string[] = [];
+    if (e.noOfYears) parts.push(`${e.noOfYears}y`);
+    if (e.noOfMonths) parts.push(`${e.noOfMonths}m`);
+    if (e.noOfDays) parts.push(`${e.noOfDays}d`);
+    return parts.length ? parts.join(' ') : '—';
   }
 
   add(): void {
     this.router.navigate(['/ums/candidate-exp/add'], this.appId ? { queryParams: { appId: this.appId } } : {});
   }
+  edit(id: number): void { this.router.navigate(['/ums/candidate-exp', id, 'edit']); }
 
-  edit(item: CandidateExp): void {
-    this.router.navigate(['/ums/candidate-exp', item.id, 'edit']);
-  }
+  askDelete(e: CandidateExp): void { this.toDelete.set(e); }
+  cancelDelete(): void { if (!this.deleting()) this.toDelete.set(null); }
 
-  remove(item: CandidateExp): void {
-    if (!confirm(`Delete experience at "${item.employerName}"?`)) return;
-    this.api.delete(item.id!).subscribe({
-      next: () => {
-        this.successMessage = 'Experience deleted.';
-        this.items = this.items.filter((i) => i.id !== item.id);
-      },
-      error: () => (this.errorMessage = 'Could not delete this record.'),
-    });
-  }
-
-  duration(i: CandidateExp): string {
-    return `${i.noOfYears ?? 0}y ${i.noOfMonths ?? 0}m ${i.noOfDays ?? 0}d`;
+  confirmDelete(): void {
+    const target = this.toDelete();
+    if (!target?.id) return;
+    this.deleting.set(true);
+    this.api.delete(target.id)
+      .pipe(finalize(() => this.deleting.set(false)))
+      .subscribe({
+        next: () => {
+          this.items.update((list) => list.filter((x) => x.id !== target.id));
+          this.toDelete.set(null);
+        },
+        error: () => {
+          this.toDelete.set(null);
+          this.errorMessage.set('Could not delete this record.');
+        },
+      });
   }
 }
