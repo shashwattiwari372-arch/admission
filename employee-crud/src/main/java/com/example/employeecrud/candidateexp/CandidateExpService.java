@@ -48,7 +48,8 @@ public class CandidateExpService {
         CandidateExp existing = findById(id);
         // keep id and verification / payment audit columns untouched
         BeanUtils.copyProperties(incoming, existing,
-                "id", "vStatus", "vBy", "vStamp", "pStatus", "pBy", "pStamp");
+                "id", "vStatus", "vBy", "vStamp", "pStatus", "pBy", "pStamp",
+                "VStatus", "VBy", "VStamp", "PStatus", "PBy", "PStamp");
         prepare(existing);
         return repository.save(existing);
     }

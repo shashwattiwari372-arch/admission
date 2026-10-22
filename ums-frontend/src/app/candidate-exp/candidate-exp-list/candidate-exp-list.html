@@ -1,80 +1,74 @@
-<div class="form-page">
-  <div class="form-header">
+<div class="page">
+  <div class="page-head">
     <div>
-      <span class="eyebrow">CANDIDATE EXPERIENCE</span>
       <h1>Work experience</h1>
-      <p>All experience records</p>
+      <p>Employment history for candidate applications.</p>
     </div>
-    <button type="button" class="submit-button" (click)="add()">Add experience</button>
+    <div class="head-actions">
+      <a class="btn btn-primary" routerLink="/experience/add" [queryParams]="appId() ? { appId: appId() } : {}">Add experience</a>
+    </div>
   </div>
 
-  @if (errorMessage()) {
-    <div class="error-message" role="alert">
-      <span>{{ errorMessage() }}</span>
-      <button type="button" class="link-button" (click)="load()">Try again</button>
+  @if (appId()) {
+    <div class="alert alert-info">
+      <span>Showing records for application <strong>#{{ appId() }}</strong> only.</span>
+      <a class="btn btn-ghost btn-sm" routerLink="/experience">Show all</a>
     </div>
   }
 
-  <section class="form-card list-card">
+  @if (error()) {
+    <div class="alert alert-error" role="alert">
+      <span>{{ error() }}</span>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="load()">Try again</button>
+    </div>
+  }
+
+  <section class="card" style="overflow:hidden">
     <div class="toolbar">
-      <input type="search" class="search" placeholder="Search employer, designation or application ID"
-             aria-label="Search experience records" [value]="query()" (input)="onSearch($event)" />
-      @if (!loading()) {
-        <span class="count">{{ filtered().length }} of {{ items().length }} records</span>
-      }
+      <input type="search" class="input search" placeholder="Search employer, designation or application ID" aria-label="Search experience records" [value]="query()" (input)="onSearch($event)" />
+      @if (!loading()) { <span class="count">{{ filtered().length }} of {{ items().length }}</span> }
     </div>
 
     @if (loading()) {
-      <div class="skeleton-list" aria-busy="true">
-        @for (i of [1,2,3,4]; track i) { <div class="skeleton-row"></div> }
-      </div>
-    } @else if (items().length === 0) {
+      <div class="skeleton-list" aria-busy="true"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
+    } @else if (items().length === 0 && !error()) {
       <div class="empty">
         <h3>No experience records yet</h3>
-        <p>Add the first employment record for a candidate.</p>
-        <button type="button" class="submit-button" (click)="add()">Add experience</button>
+        <p>Add the first employment record.</p>
+        <a class="btn btn-primary" routerLink="/experience/add" [queryParams]="appId() ? { appId: appId() } : {}">Add experience</a>
       </div>
-    } @else if (filtered().length === 0) {
+    } @else if (filtered().length === 0 && items().length > 0) {
       <div class="empty">
         <h3>No matches</h3>
-        <p>Nothing matches “{{ query() }}”. Try a different search.</p>
+        <p>Nothing matches “{{ query() }}”.</p>
+        <button type="button" class="btn btn-ghost" (click)="query.set('')">Clear search</button>
       </div>
-    } @else {
+    } @else if (items().length > 0) {
       <div class="table-wrap">
-        <table class="data-table">
+        <table class="table">
           <thead>
-            <tr>
-              <th>Employer</th>
-              <th>Designation</th>
-              <th>Period</th>
-              <th>Duration</th>
-              <th class="num">Total emoluments</th>
-              <th class="actions-col"><span class="sr-only">Actions</span></th>
-            </tr>
+            <tr><th>Employer</th><th>Designation</th><th>Period</th><th>Duration</th><th class="num">Total emoluments</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
           </thead>
           <tbody>
             @for (e of filtered(); track e.id) {
               <tr>
                 <td>
-                  <div class="primary">{{ e.employerName }}</div>
-                  <div class="secondary">App ID {{ e.appId }}@if (e.orgType) { &middot; {{ e.orgType }} }</div>
+                  <div class="cell-title">{{ e.employerName }}</div>
+                  <div class="cell-sub">App ID {{ e.appId }}@if (e.orgType) { · {{ e.orgType }} }</div>
                 </td>
                 <td>
-                  <div class="primary">{{ e.designation }}</div>
-                  @if (e.jobType) { <div class="secondary">{{ e.jobType }}</div> }
+                  <div class="cell-title">{{ e.designation }}</div>
+                  @if (e.jobType) { <div class="cell-sub">{{ e.jobType }}</div> }
                 </td>
                 <td class="nowrap">
                   {{ e.fromDt | date: 'dd MMM yyyy' }} –
-                  @if (e.toDt) { {{ e.toDt | date: 'dd MMM yyyy' }} }
-                  @else { <span class="chip chip-current">Current</span> }
+                  @if (e.toDt) { {{ e.toDt | date: 'dd MMM yyyy' }} } @else { <span class="badge badge-ok">Current</span> }
                 </td>
                 <td class="nowrap">{{ duration(e) }}</td>
-                <td class="num">
-                  @if (e.totalEmoluments != null) { {{ e.totalEmoluments | number: '1.2-2' }} } @else { — }
-                </td>
-                <td class="actions-col">
-                  <button type="button" class="row-button" (click)="edit(e.id!)">Edit</button>
-                  <button type="button" class="row-button danger" (click)="askDelete(e)">Delete</button>
+                <td class="num">@if (e.totalEmoluments != null) { {{ e.totalEmoluments | number: '1.2-2' }} } @else { — }</td>
+                <td class="actions">
+                  <a class="btn btn-link btn-sm" [routerLink]="['/experience', e.id, 'edit']">Edit</a>
+                  <button type="button" class="btn btn-link btn-sm danger" (click)="toDelete.set(e)">Delete</button>
                 </td>
               </tr>
             }
@@ -86,16 +80,11 @@
 </div>
 
 @if (toDelete(); as target) {
-  <div class="backdrop" (click)="cancelDelete()">
-    <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="del-title" (click)="$event.stopPropagation()">
-      <h3 id="del-title">Delete this record?</h3>
-      <p>{{ target.designation }} at {{ target.employerName }} will be permanently removed.</p>
-      <div class="dialog-actions">
-        <button type="button" class="cancel-button" (click)="cancelDelete()" [disabled]="deleting()">Keep record</button>
-        <button type="button" class="danger-button" (click)="confirmDelete()" [disabled]="deleting()">
-          {{ deleting() ? 'Deleting…' : 'Delete record' }}
-        </button>
-      </div>
-    </div>
-  </div>
+  <app-confirm-dialog
+    heading="Delete this record?"
+    [message]="target.designation + ' at ' + target.employerName + ' will be permanently removed.'"
+    confirmLabel="Delete record"
+    [busy]="deleting()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="toDelete.set(null)" />
 }

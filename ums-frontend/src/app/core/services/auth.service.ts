@@ -1,7 +1,8 @@
-
-import { Injectable } from '@angular/core';
+import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { API_URL } from '../config/api.config';
 
 export interface LoginRequest {
   username: string;
@@ -17,43 +18,78 @@ export interface LoginResponse {
   token: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+export interface SessionUser {
+  userId: number;
+  fullName: string;
+  username: string;
+  email: string;
+}
+
+const KEYS = ['token', 'userId', 'username', 'fullName', 'email'] as const;
+
+@Injectable({ providedIn: 'root' })
 export class AuthService {
+  private http = inject(HttpClient);
+  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private apiUrl = `${API_URL}/auth`;
 
-  private apiUrl = 'http://localhost:8080/api/auth';
+  private _user = signal<SessionUser | null>(this.restore());
 
-  constructor(private http: HttpClient) {}
+  /** Current signed-in user (null when signed out). */
+  readonly user = this._user.asReadonly();
+  readonly loggedIn = computed(() => this._user() !== null);
+  readonly initials = computed(() => {
+    const name = this._user()?.fullName || this._user()?.username || '';
+    return (
+      name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((p) => p[0].toUpperCase())
+        .join('') || 'U'
+    );
+  });
 
   login(request: LoginRequest): Observable<LoginResponse> {
-
-    return this.http
-      .post<LoginResponse>(`${this.apiUrl}/login`, request)
-      .pipe(
-        tap(response => {
-          localStorage.setItem('token', response.token);
-          localStorage.setItem('userId', response.userId.toString());
-          localStorage.setItem('username', response.username);
-          localStorage.setItem('fullName', response.fullName);
-          localStorage.setItem('email', response.email);
-        })
-      );
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, request).pipe(
+      tap((res) => {
+        if (this.isBrowser) {
+          localStorage.setItem('token', res.token);
+          localStorage.setItem('userId', String(res.userId));
+          localStorage.setItem('username', res.username);
+          localStorage.setItem('fullName', res.fullName);
+          localStorage.setItem('email', res.email);
+        }
+        this._user.set({
+          userId: res.userId,
+          fullName: res.fullName,
+          username: res.username,
+          email: res.email,
+        });
+      })
+    );
   }
 
   logout(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('username');
-    localStorage.removeItem('fullName');
-    localStorage.removeItem('email');
+    if (this.isBrowser) KEYS.forEach((k) => localStorage.removeItem(k));
+    this._user.set(null);
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return this.isBrowser ? localStorage.getItem('token') : null;
   }
 
   isLoggedIn(): boolean {
     return !!this.getToken();
+  }
+
+  private restore(): SessionUser | null {
+    if (!this.isBrowser || !localStorage.getItem('token')) return null;
+    return {
+      userId: Number(localStorage.getItem('userId') ?? 0),
+      fullName: localStorage.getItem('fullName') ?? '',
+      username: localStorage.getItem('username') ?? '',
+      email: localStorage.getItem('email') ?? '',
+    };
   }
 }

@@ -1,176 +1,138 @@
-<div class="form-page">
-  <div class="form-header">
+<div class="page">
+  <div class="page-head">
     <div>
-      <span class="eyebrow">CANDIDATE EXPERIENCE</span>
       <h1>{{ isEdit ? 'Edit experience' : 'Add experience' }}</h1>
-      <p>Employment details for the candidate's application.</p>
+      <p>Employment details for the candidate’s application.</p>
     </div>
-    <button type="button" class="back-button" (click)="goBack()">Back to list</button>
+    <div class="head-actions"><a class="btn btn-ghost" routerLink="/experience" [queryParams]="backQuery">Back to list</a></div>
   </div>
 
-  @if (errorMessage) {
-    <div class="error-message">{{ errorMessage }}</div>
-  }
-  @if (successMessage) {
-    <div class="success-message">{{ successMessage }}</div>
-  }
+  @if (error()) { <div class="alert alert-error" role="alert">{{ error() }}</div> }
 
-  @if (loading) {
-    <p>Loading…</p>
+  @if (loading()) {
+    <div class="card card-pad"><div class="skeleton-list" style="padding:0"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div></div>
   } @else {
-    <form class="employee-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
 
-      <!-- ORGANISATION -->
-      <section class="form-card">
-        <div class="section-header">
-          <h2>Organisation</h2>
-          <p>Where the candidate worked.</p>
-        </div>
-
+      <section class="card card-pad">
+        <div class="card-head"><h2>Organisation</h2><p>Where the candidate worked.</p></div>
         <div class="form-grid">
-          <div class="form-group">
-            <label for="appId">Application ID <span>*</span></label>
+          <div class="field">
+            <label for="appId">Application ID <span class="req">*</span></label>
             <input id="appId" type="number" formControlName="appId" />
-            @if (invalid('appId')) { <small class="field-error">Application ID is required.</small> }
+            @if (invalid('appId')) { <span class="error">Application ID is required.</span> }
           </div>
-
-          <div class="form-group">
-            <label for="employerName">Employer name <span>*</span></label>
+          <div class="field">
+            <label for="employerName">Employer name <span class="req">*</span></label>
             <input id="employerName" type="text" formControlName="employerName" />
-            @if (invalid('employerName')) { <small class="field-error">Employer name is required.</small> }
+            @if (invalid('employerName')) { <span class="error">Employer name is required.</span> }
           </div>
-
-          <div class="form-group">
+          <div class="field">
             <label for="orgType">Organisation type</label>
             <select id="orgType" formControlName="orgType">
               <option value="">Select type</option>
               @for (t of orgTypes; track t) { <option [value]="t">{{ t }}</option> }
             </select>
           </div>
-
-          <div class="form-group">
+          <div class="field">
             <label for="orgWebsite">Website</label>
             <input id="orgWebsite" type="text" formControlName="orgWebsite" placeholder="https://" />
           </div>
-
-          <div class="form-group">
+          <div class="field">
             <label for="orgMobile">Mobile</label>
             <input id="orgMobile" type="text" formControlName="orgMobile" maxlength="15" />
-            @if (invalid('orgMobile')) { <small class="field-error">Use digits, +, - or spaces only.</small> }
+            @if (invalid('orgMobile')) { <span class="error">Use digits, +, - or spaces only.</span> }
           </div>
-
-          <div class="form-group">
+          <div class="field">
             <label for="orgEmail">Email</label>
             <input id="orgEmail" type="email" formControlName="orgEmail" />
-            @if (invalid('orgEmail')) { <small class="field-error">Enter a valid email address.</small> }
+            @if (invalid('orgEmail')) { <span class="error">Enter a valid email address.</span> }
           </div>
         </div>
       </section>
 
-      <!-- POSITION -->
-      <section class="form-card">
-        <div class="section-header">
-          <h2>Position and period</h2>
-          <p>Duration is calculated automatically when you save. Leave "To date" empty for a current job.</p>
-        </div>
-
+      <section class="card card-pad">
+        <div class="card-head"><h2>Position and period</h2><p>Duration is calculated when you save. Leave “To date” empty for a current job.</p></div>
         <div class="form-grid">
-          <div class="form-group">
-            <label for="designation">Designation <span>*</span></label>
+          <div class="field">
+            <label for="designation">Designation <span class="req">*</span></label>
             <input id="designation" type="text" formControlName="designation" />
-            @if (invalid('designation')) { <small class="field-error">Designation is required.</small> }
+            @if (invalid('designation')) { <span class="error">Designation is required.</span> }
           </div>
-
-          <div class="form-group">
+          <div class="field">
             <label for="jobType">Job type</label>
             <select id="jobType" formControlName="jobType">
               <option value="">Select job type</option>
               @for (t of jobTypes; track t) { <option [value]="t">{{ t }}</option> }
             </select>
           </div>
-
-          <div class="form-group">
-            <label for="fromDt">From date <span>*</span></label>
+          <div class="field">
+            <label for="fromDt">From date <span class="req">*</span></label>
             <input id="fromDt" type="date" formControlName="fromDt" />
-            @if (invalid('fromDt')) { <small class="field-error">From date is required.</small> }
+            @if (invalid('fromDt')) { <span class="error">From date is required.</span> }
           </div>
-
-          <div class="form-group">
+          <div class="field">
             <label for="toDt">To date</label>
             <input id="toDt" type="date" formControlName="toDt" />
           </div>
         </div>
       </section>
 
-      <!-- PAY -->
-      <section class="form-card">
-        <div class="section-header">
-          <h2>Pay details</h2>
-          <p>Total emoluments = basic pay + other allowance.</p>
-        </div>
-
+      <section class="card card-pad">
+        <div class="card-head"><h2>Pay details</h2><p>Total emoluments = basic pay + other allowance.</p></div>
         <div class="form-grid">
-          <div class="form-group">
+          <div class="field">
             <label for="payLevel">Pay level</label>
             <input id="payLevel" type="text" formControlName="payLevel" />
           </div>
-
-          <div class="form-group">
+          <div class="field">
             <label for="lastPay">Last pay drawn</label>
             <input id="lastPay" type="text" formControlName="lastPay" />
           </div>
-
-          <div class="form-group">
+          <div class="field">
             <label for="basicPay">Basic pay</label>
             <input id="basicPay" type="number" step="0.01" formControlName="basicPay" />
-            @if (invalid('basicPay')) { <small class="field-error">Cannot be negative.</small> }
+            @if (invalid('basicPay')) { <span class="error">Cannot be negative.</span> }
           </div>
-
-          <div class="form-group">
+          <div class="field">
             <label for="otherAllowance">Other allowance</label>
             <input id="otherAllowance" type="number" step="0.01" formControlName="otherAllowance" />
-            @if (invalid('otherAllowance')) { <small class="field-error">Cannot be negative.</small> }
+            @if (invalid('otherAllowance')) { <span class="error">Cannot be negative.</span> }
           </div>
-
-          <div class="form-group">
-            <label>Total emoluments</label>
-            <input type="text" [value]="total.toFixed(2)" readonly />
+          <div class="field">
+            <label for="total">Total emoluments</label>
+            <input id="total" type="text" [value]="total.toFixed(2)" readonly />
           </div>
         </div>
       </section>
 
-      <!-- WORK -->
-      <section class="form-card">
-        <div class="section-header">
-          <h2>Work profile</h2>
-          <p>What the candidate did and why they left.</p>
-        </div>
-
-        <div class="form-group">
-          <label for="natureWork">Nature of work</label>
-          <textarea id="natureWork" rows="3" formControlName="natureWork"></textarea>
-        </div>
-
-        <div class="form-group full-width">
-          <label for="responsibilities">Responsibilities</label>
-          <textarea id="responsibilities" rows="5" formControlName="responsibilities"></textarea>
-        </div>
-
-        <div class="form-group full-width">
-          <label for="reasonLeave">Reason for leaving</label>
-          <textarea id="reasonLeave" rows="3" formControlName="reasonLeave"></textarea>
-        </div>
-
-        <div class="form-group full-width">
-          <label for="remark">Remark</label>
-          <input id="remark" type="text" formControlName="remark" maxlength="45" />
+      <section class="card card-pad">
+        <div class="card-head"><h2>Work profile</h2><p>What the candidate did and why they left.</p></div>
+        <div class="form-grid">
+          <div class="field wide">
+            <label for="natureWork">Nature of work</label>
+            <textarea id="natureWork" rows="3" formControlName="natureWork"></textarea>
+          </div>
+          <div class="field wide">
+            <label for="responsibilities">Responsibilities</label>
+            <textarea id="responsibilities" rows="5" formControlName="responsibilities"></textarea>
+          </div>
+          <div class="field wide">
+            <label for="reasonLeave">Reason for leaving</label>
+            <textarea id="reasonLeave" rows="3" formControlName="reasonLeave"></textarea>
+          </div>
+          <div class="field wide">
+            <label for="remark">Remark</label>
+            <input id="remark" type="text" formControlName="remark" maxlength="45" />
+          </div>
         </div>
       </section>
 
       <div class="form-actions">
-        <button type="button" class="cancel-button" (click)="goBack()" [disabled]="saving">Cancel</button>
-        <button type="submit" class="submit-button" [disabled]="saving">
-          {{ saving ? 'Saving…' : isEdit ? 'Save changes' : 'Save experience' }}
+        <a class="btn btn-ghost" routerLink="/experience" [queryParams]="backQuery" [attr.aria-disabled]="saving()">Cancel</a>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          @if (saving()) { <span class="spinner"></span> }
+          {{ saving() ? 'Saving…' : isEdit ? 'Save changes' : 'Save experience' }}
         </button>
       </div>
     </form>

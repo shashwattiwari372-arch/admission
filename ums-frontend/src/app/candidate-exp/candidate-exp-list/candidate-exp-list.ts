@@ -1,25 +1,27 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { CandidateExp } from '../candidate-exp.model';
 import { CandidateExpService } from '../candidate-exp.service';
+import { ToastService } from '../../core/services/toast.service';
+import { ConfirmDialog } from '../../shared/confirm-dialog/confirm-dialog';
 
 @Component({
   selector: 'app-candidate-exp-list',
-  imports: [DatePipe, DecimalPipe],
+  imports: [DatePipe, DecimalPipe, RouterLink, ConfirmDialog],
   templateUrl: './candidate-exp-list.html',
-  styleUrl: './candidate-exp-list.css',
 })
-export class CandidateExpList implements OnInit {
+export class CandidateExpList {
   private api = inject(CandidateExpService);
-  private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private toast = inject(ToastService);
 
-  appId: number | null = null;
+  appId = signal<number | null>(null);
   items = signal<CandidateExp[]>([]);
   loading = signal(true);
-  errorMessage = signal('');
+  error = signal('');
   query = signal('');
   toDelete = signal<CandidateExp | null>(null);
   deleting = signal(false);
@@ -28,34 +30,29 @@ export class CandidateExpList implements OnInit {
     const q = this.query().trim().toLowerCase();
     if (!q) return this.items();
     return this.items().filter((e) =>
-      [e.employerName, e.designation, e.jobType, String(e.appId)]
-        .some((v) => (v ?? '').toLowerCase().includes(q))
+      [e.employerName, e.designation, e.jobType, String(e.appId)].some((v) => (v ?? '').toLowerCase().includes(q))
     );
   });
 
-  ngOnInit(): void {
-    const appId = this.route.snapshot.queryParamMap.get('appId');
-    this.appId = appId ? Number(appId) : null;
-    this.load();
+  constructor() {
+    // re-runs when the ?appId= filter changes, without a page reload
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((p) => {
+      const raw = p.get('appId');
+      this.appId.set(raw && !isNaN(Number(raw)) ? Number(raw) : null);
+      this.load();
+    });
   }
 
   load(): void {
     this.loading.set(true);
-    this.errorMessage.set('');
-    this.api.getAll(this.appId)
+    this.error.set('');
+    this.api.getAll(this.appId())
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (data) => this.items.set(Array.isArray(data) ? data : (data as any)?.content ?? []),
-        error: (err) => {
-          console.error('Load failed', err);
-          this.errorMessage.set(
-            err.status === 401 || err.status === 403
-              ? 'Your session has expired. Please log in again.'
-              : err.status === 0
-                ? 'Cannot reach the server. Check that the backend is running.'
-                : 'Could not load experience records.'
-          );
-        },
+        error: (err) => this.error.set(
+          err.status === 0 ? 'Cannot reach the server. Check that the backend is running on port 8080.' : 'Could not load experience records.'
+        ),
       });
   }
 
@@ -69,14 +66,6 @@ export class CandidateExpList implements OnInit {
     return parts.length ? parts.join(' ') : '—';
   }
 
-  add(): void {
-    this.router.navigate(['/ums/candidate-exp/add'], this.appId ? { queryParams: { appId: this.appId } } : {});
-  }
-  edit(id: number): void { this.router.navigate(['/ums/candidate-exp', id, 'edit']); }
-
-  askDelete(e: CandidateExp): void { this.toDelete.set(e); }
-  cancelDelete(): void { if (!this.deleting()) this.toDelete.set(null); }
-
   confirmDelete(): void {
     const target = this.toDelete();
     if (!target?.id) return;
@@ -85,12 +74,13 @@ export class CandidateExpList implements OnInit {
       .pipe(finalize(() => this.deleting.set(false)))
       .subscribe({
         next: () => {
-          this.items.update((list) => list.filter((x) => x.id !== target.id));
+          this.items.update((l) => l.filter((x) => x.id !== target.id));
           this.toDelete.set(null);
+          this.toast.success('Experience record deleted.');
         },
         error: () => {
           this.toDelete.set(null);
-          this.errorMessage.set('Could not delete this record.');
+          this.toast.error('Could not delete this record.');
         },
       });
   }

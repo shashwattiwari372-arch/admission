@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../config/api.config';
 
 import { State } from '../models/state.model';
 
@@ -9,7 +10,7 @@ import { State } from '../models/state.model';
 })
 export class StateService {
 
-  private apiUrl = 'http://localhost:8080/api/states';
+  private apiUrl = `${API_URL}/states`;
 
   constructor(private http: HttpClient) {}
 

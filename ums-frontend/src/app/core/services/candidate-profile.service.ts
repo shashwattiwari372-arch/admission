@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../config/api.config';
 
 import { CandidateProfile } from '../models/candidate-profile.model';
 
@@ -9,7 +10,7 @@ import { CandidateProfile } from '../models/candidate-profile.model';
 })
 export class CandidateProfileService {
 
-  private apiUrl = 'http://localhost:8080/api/candidates';
+  private apiUrl = `${API_URL}/candidates`;
 
   constructor(private http: HttpClient) {}
 

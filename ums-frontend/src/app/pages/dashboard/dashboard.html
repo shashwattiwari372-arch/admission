@@ -1,0 +1,62 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>{{ firstName() ? greeting + ', ' + firstName() : greeting }}</h1>
+      <p>Here’s what’s in the system today.</p>
+    </div>
+    <div class="head-actions">
+      <a class="btn btn-ghost" routerLink="/candidates/new">New candidate</a>
+      <a class="btn btn-primary" routerLink="/employees/new">New employee</a>
+    </div>
+  </div>
+
+  @if (failed()) {
+    <div class="alert alert-error" role="alert">
+      <span>Couldn’t reach the server. Check that the backend is running on port 8080.</span>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="load()">Try again</button>
+    </div>
+  }
+
+  <div class="stats">
+    @for (s of stats(); track s.label) {
+      <a class="card stat" [routerLink]="s.link">
+        <span class="label">{{ s.label }}</span>
+        @if (loading()) { <span class="value skeleton-num"></span> }
+        @else { <span class="value">{{ s.value ?? '–' }}</span> }
+        <span class="note">{{ s.note }}</span>
+        <span class="go">Open</span>
+      </a>
+    }
+  </div>
+
+  <section class="card recent">
+    <div class="toolbar">
+      <h2>Recently added candidates</h2>
+      <a class="btn btn-link btn-sm" routerLink="/candidates">View all</a>
+    </div>
+
+    @if (loading()) {
+      <div class="skeleton-list"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
+    } @else if (recent().length === 0) {
+      <div class="empty">
+        <h3>No candidates yet</h3>
+        <p>Add a candidate profile to see it here.</p>
+        <a class="btn btn-primary" routerLink="/candidates/new">Add candidate</a>
+      </div>
+    } @else {
+      <ul class="list">
+        @for (c of recent(); track c.id) {
+          <li>
+            <span class="avatar">{{ initials(c.fullName) }}</span>
+            <div class="who">
+              <span class="cell-title">{{ c.title ? c.title + ' ' : '' }}{{ c.fullName }}</span>
+              <span class="cell-sub">{{ c.email }}</span>
+            </div>
+            <a class="btn btn-link btn-sm" [routerLink]="['/experience']" [queryParams]="{ appId: c.id }">Experience</a>
+            <a class="btn btn-link btn-sm" [routerLink]="['/candidates', c.id, 'edit']">Open</a>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>
