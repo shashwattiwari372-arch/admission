@@ -12,8 +12,8 @@ public class AppUser {
     @Column(nullable = false, unique = true, length = 80)
     private String username;
 
-    @Column(nullable = false, length = 100)
-    private String password; // BCrypt hash
+    @Column(nullable = false)
+    private String password; 
 
     @Column(length = 120)
     private String fullName;
