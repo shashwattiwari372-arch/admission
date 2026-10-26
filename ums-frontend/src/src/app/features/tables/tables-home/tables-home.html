@@ -1,0 +1,36 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>All tables</h1>
+      <p>Add, edit and delete records in every table of the admission database ({{ total }} tables).</p>
+    </div>
+  </div>
+
+  <div class="search-row">
+    <input type="search" class="input search" placeholder="Search tables" aria-label="Search tables" [value]="query()" (input)="onSearch($event)" />
+  </div>
+
+  @for (g of groups(); track g.label) {
+    <section class="group">
+      <h2>{{ g.label }}</h2>
+      <div class="grid">
+        @for (t of g.tables; track t.key) {
+          <a class="card tile" [routerLink]="path(t)">
+            <div class="row">
+              <h3>{{ t.label }}</h3>
+              @if (t.link) { <span class="badge badge-ok">Own page</span> }
+            </div>
+            <p>{{ t.description }}</p>
+            <code>{{ t.key.replaceAll('-', '_') }}</code>
+          </a>
+        }
+      </div>
+    </section>
+  } @empty {
+    <div class="card empty" style="margin-top:20px">
+      <h3>No matching tables</h3>
+      <p>Try a different search word.</p>
+      <button type="button" class="btn btn-ghost" (click)="query.set('')">Clear search</button>
+    </div>
+  }
+</div>

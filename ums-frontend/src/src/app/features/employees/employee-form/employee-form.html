@@ -1,0 +1,101 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>{{ isEdit ? 'Edit employee' : 'Add employee' }}</h1>
+      <p>{{ isEdit ? 'Update the details below and save.' : 'Fill in the details to create a new employee.' }}</p>
+    </div>
+    <div class="head-actions"><a class="btn btn-ghost" routerLink="/employees">Back to list</a></div>
+  </div>
+
+  @if (error()) { <div class="alert alert-error" role="alert">{{ error() }}</div> }
+
+  @if (loading()) {
+    <div class="card card-pad"><div class="skeleton-list" style="padding:0"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div></div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <section class="card card-pad">
+        <div class="card-head"><h2>Account</h2><p>Name and sign-in details.</p></div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="fullName">Full name <span class="req">*</span></label>
+            <input id="fullName" type="text" formControlName="fullName" />
+            @if (invalid('fullName')) { <span class="error">Full name is required.</span> }
+          </div>
+          <div class="field">
+            <label for="email">Email <span class="req">*</span></label>
+            <input id="email" type="email" formControlName="email" autocomplete="off" />
+            @if (invalid('email')) { <span class="error">Enter a valid email address.</span> }
+          </div>
+          <div class="field">
+            <label for="password">Password @if (!isEdit) { <span class="req">*</span> }</label>
+            <input id="password" type="password" formControlName="password" autocomplete="new-password" />
+            @if (isEdit) { <span class="hint">Leave blank to keep the current password.</span> }
+            @if (invalid('password')) { <span class="error">{{ isEdit ? 'Use at least 6 characters.' : 'Password is required (min 6 characters).' }}</span> }
+          </div>
+        </div>
+      </section>
+
+      <section class="card card-pad">
+        <div class="card-head"><h2>Personal</h2></div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="age">Age <span class="req">*</span></label>
+            <input id="age" type="number" formControlName="age" />
+            @if (invalid('age')) { <span class="error">Age must be between 18 and 70.</span> }
+          </div>
+          <div class="field">
+            <label for="gender">Gender <span class="req">*</span></label>
+            <select id="gender" formControlName="gender">
+              <option value="">Select gender</option>
+              <option>Male</option><option>Female</option><option>Other</option>
+            </select>
+            @if (invalid('gender')) { <span class="error">Select a gender.</span> }
+          </div>
+          <div class="field wide">
+            <label for="address">Address</label>
+            <textarea id="address" rows="3" formControlName="address"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section class="card card-pad">
+        <div class="card-head"><h2>Employment</h2><p>Department, contract type and skills.</p></div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="department">Department <span class="req">*</span></label>
+            <input id="department" type="text" formControlName="department" list="dept-list" />
+            <datalist id="dept-list">@for (d of departments; track d) { <option [value]="d"></option> }</datalist>
+            @if (invalid('department')) { <span class="error">Department is required.</span> }
+          </div>
+          <div class="field">
+            <label for="employmentType">Employment type <span class="req">*</span></label>
+            <input id="employmentType" type="text" formControlName="employmentType" list="type-list" />
+            <datalist id="type-list">@for (t of employmentTypes; track t) { <option [value]="t"></option> }</datalist>
+            @if (invalid('employmentType')) { <span class="error">Employment type is required.</span> }
+          </div>
+          <div class="field">
+            <label for="joiningDate">Joining date <span class="req">*</span></label>
+            <input id="joiningDate" type="date" formControlName="joiningDate" />
+            @if (invalid('joiningDate')) { <span class="error">Joining date is required.</span> }
+          </div>
+          <div class="field">
+            <label for="skills">Skills</label>
+            <input id="skills" type="text" formControlName="skills" placeholder="Java, Angular, SQL" />
+            <span class="hint">Separate skills with commas.</span>
+          </div>
+          <div class="field wide">
+            <label class="check"><input type="checkbox" formControlName="active" /> Active employee</label>
+          </div>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <a class="btn btn-ghost" routerLink="/employees" [attr.aria-disabled]="saving()">Cancel</a>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          @if (saving()) { <span class="spinner"></span> }
+          {{ saving() ? 'Saving…' : isEdit ? 'Save changes' : 'Add employee' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

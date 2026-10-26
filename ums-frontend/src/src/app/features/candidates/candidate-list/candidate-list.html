@@ -1,0 +1,80 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Candidates</h1>
+      <p>Candidate profiles. Open one to edit it or see their work experience.</p>
+    </div>
+    <div class="head-actions"><a class="btn btn-primary" routerLink="/candidates/new">Add candidate</a></div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error" role="alert">
+      <span>{{ error() }}</span>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="load()">Try again</button>
+    </div>
+  }
+
+  <section class="card" style="overflow:hidden">
+    <div class="toolbar">
+      <input type="search" class="input search" placeholder="Search name, email, mobile, city or ID" aria-label="Search candidates" [value]="query()" (input)="onSearch($event)" />
+      @if (!loading()) { <span class="count">{{ filtered().length }} of {{ items().length }}</span> }
+    </div>
+
+    @if (loading()) {
+      <div class="skeleton-list" aria-busy="true"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
+    } @else if (items().length === 0 && !error()) {
+      <div class="empty">
+        <h3>No candidates yet</h3>
+        <p>Create the first candidate profile.</p>
+        <a class="btn btn-primary" routerLink="/candidates/new">Add candidate</a>
+      </div>
+    } @else if (filtered().length === 0 && items().length > 0) {
+      <div class="empty">
+        <h3>No matches</h3>
+        <p>Nothing matches “{{ query() }}”.</p>
+        <button type="button" class="btn btn-ghost" (click)="query.set('')">Clear search</button>
+      </div>
+    } @else if (items().length > 0) {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>Candidate</th><th>Mobile</th><th>Location</th><th>Category</th><th class="actions"><span class="sr-only">Actions</span></th></tr>
+          </thead>
+          <tbody>
+            @for (c of filtered(); track c.id) {
+              <tr>
+                <td>
+                  <div class="cell-person">
+                    <span class="avatar">{{ initials(c.fullName) }}</span>
+                    <div>
+                      <div class="cell-title">{{ c.title ? c.title + ' ' : '' }}{{ c.fullName }}</div>
+                      <div class="cell-sub">{{ c.email }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="nowrap">{{ c.mobileNo || '—' }}</td>
+                <td>{{ location(c) }}</td>
+                <td>@if (c.category) { <span class="badge">{{ c.category }}</span> } @else { — }</td>
+                <td class="actions">
+                  <a class="btn btn-link btn-sm" routerLink="/experience" [queryParams]="{ appId: c.id }">Experience</a>
+                  <a class="btn btn-link btn-sm" [routerLink]="['/candidates', c.id, 'edit']">Edit</a>
+                  <button type="button" class="btn btn-link btn-sm danger" (click)="toDelete.set(c)">Delete</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+@if (toDelete(); as target) {
+  <app-confirm-dialog
+    heading="Delete this candidate?"
+    [message]="target.fullName + ' and their profile will be permanently removed.'"
+    confirmLabel="Delete candidate"
+    [busy]="deleting()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="toDelete.set(null)" />
+}

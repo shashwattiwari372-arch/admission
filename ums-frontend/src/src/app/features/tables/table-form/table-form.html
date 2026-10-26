@@ -1,0 +1,86 @@
+@if (notFound()) {
+  <div class="page">
+    <div class="card empty">
+      <h3>Table not found</h3>
+      <p>There is no table with that name.</p>
+      <a class="btn btn-primary" routerLink="/tables">See all tables</a>
+    </div>
+  </div>
+} @else if (def(); as d) {
+  <div class="page">
+    <div class="page-head">
+      <div>
+        <h1>{{ isEdit ? 'Edit ' + d.singular : 'Add ' + d.singular }}</h1>
+        <p>{{ isEdit ? 'Update the details below and save.' : 'Fill in the details to create a new record in ' + d.label + '.' }}</p>
+      </div>
+      <div class="head-actions"><a class="btn btn-ghost" [routerLink]="['/tables', d.key]">Back to list</a></div>
+    </div>
+
+    @if (error()) { <div class="alert alert-error" role="alert">{{ error() }}</div> }
+
+    @if (loading()) {
+      <div class="card card-pad"><div class="skeleton-list" style="padding:0"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div></div>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <ng-template #fieldTpl let-f>
+        <div class="field" [class.wide]="f.type === 'textarea'">
+          <label [for]="'f_' + f.name">{{ f.label }} @if (f.required) { <span class="req">*</span> }</label>
+          @if (f.type === 'textarea') {
+            <textarea [id]="'f_' + f.name" [attr.rows]="f.max ? 3 : 8" [attr.maxlength]="f.max ?? null" [formControlName]="f.name"></textarea>
+          } @else {
+            <input [id]="'f_' + f.name" [type]="inputType(f)" [formControlName]="f.name"
+                   [attr.step]="f.type === 'decimal' ? (f.step || '0.01') : f.type === 'time' ? 1 : null"
+                   [attr.maxlength]="f.type === 'text' ? f.max : null"
+                   [attr.autocomplete]="f.secret ? 'new-password' : 'off'" />
+          }
+          @if (invalid(f.name)) { <span class="error">{{ message(f) }}</span> }
+        </div>
+      </ng-template>
+
+        <section class="card card-pad">
+          <div class="card-head"><h2>Details</h2></div>
+          @if (lastUpdate()) { <p class="meta">{{ lastUpdate() }}</p> }
+          <div class="form-grid">
+            @for (f of mainFields(); track f.name) {
+              <ng-container *ngTemplateOutlet="fieldTpl; context: { $implicit: f }" />
+            }
+          </div>
+        </section>
+
+        @if (statusFields().length) {
+          <section class="card card-pad">
+            <details [open]="openStatus()">
+              <summary>Status &amp; verification <small>optional</small></summary>
+              <div class="form-grid">
+                @for (f of statusFields(); track f.name) {
+                  <ng-container *ngTemplateOutlet="fieldTpl; context: { $implicit: f }" />
+                }
+              </div>
+            </details>
+          </section>
+        }
+
+        @if (extraFields().length) {
+          <section class="card card-pad">
+            <details>
+              <summary>Extra fields <small>spare columns f1–f5</small></summary>
+              <div class="form-grid">
+                @for (f of extraFields(); track f.name) {
+                  <ng-container *ngTemplateOutlet="fieldTpl; context: { $implicit: f }" />
+                }
+              </div>
+            </details>
+          </section>
+        }
+
+        <div class="form-actions">
+          <a class="btn btn-ghost" [routerLink]="['/tables', d.key]" [attr.aria-disabled]="saving()">Cancel</a>
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            @if (saving()) { <span class="spinner"></span> }
+            {{ saving() ? 'Saving…' : isEdit ? 'Save changes' : 'Add ' + d.singular }}
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+}

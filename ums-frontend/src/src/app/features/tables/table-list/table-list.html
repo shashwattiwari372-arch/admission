@@ -1,0 +1,103 @@
+@if (notFound()) {
+  <div class="page">
+    <div class="card empty">
+      <h3>Table not found</h3>
+      <p>There is no table with that name.</p>
+      <a class="btn btn-primary" routerLink="/tables">See all tables</a>
+    </div>
+  </div>
+} @else if (def(); as d) {
+  <div class="page">
+    <div class="page-head">
+      <div>
+        <h1>{{ d.label }}</h1>
+        <p>{{ d.description }}</p>
+      </div>
+      <div class="head-actions">
+        <a class="btn btn-ghost" routerLink="/tables">All tables</a>
+        <a class="btn btn-primary" [routerLink]="['/tables', d.key, 'new']">Add {{ d.singular }}</a>
+      </div>
+    </div>
+
+    @if (error()) {
+      <div class="alert alert-error" role="alert">
+        <span>{{ error() }}</span>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="load()">Try again</button>
+      </div>
+    }
+
+    <section class="card" style="overflow:hidden">
+      <div class="toolbar">
+        <input type="search" class="input search" [placeholder]="'Search ' + d.label.toLowerCase()" [attr.aria-label]="'Search ' + d.label" [value]="query()" (input)="onSearch($event)" />
+        @if (filterField()) {
+          <span class="badge badge-warn chip">
+            {{ filterField() }} = {{ filterValue() }}
+            <button type="button" class="btn btn-link btn-sm" style="padding:0" (click)="clearFilter()" aria-label="Clear filter">✕</button>
+          </span>
+        }
+        @if (!loading()) { <span class="count">{{ filtered().length }} of {{ items().length }}</span> }
+      </div>
+
+      @if (loading()) {
+        <div class="skeleton-list" aria-busy="true"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
+      } @else if (items().length === 0 && !error()) {
+        <div class="empty">
+          <h3>No records yet</h3>
+          <p>Add the first {{ d.singular }} to get started.</p>
+          <a class="btn btn-primary" [routerLink]="['/tables', d.key, 'new']">Add {{ d.singular }}</a>
+        </div>
+      } @else if (filtered().length === 0 && items().length > 0) {
+        <div class="empty">
+          <h3>No matches</h3>
+          <p>Nothing fits the current search or filter.</p>
+          <button type="button" class="btn btn-ghost" (click)="query.set(''); clearFilter()">Clear filters</button>
+        </div>
+      } @else if (items().length > 0) {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                @for (c of columns(); track c.name) { <th>{{ c.label }}</th> }
+                <th class="actions"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of pageItems(); track rowId(r)) {
+                <tr>
+                  <td class="nowrap muted">{{ r[d.idField] }}</td>
+                  @for (c of columns(); track c.name) {
+                    <td [class.nowrap]="c.type !== 'text' && c.type !== 'textarea'" [class.num]="c.type === 'number' || c.type === 'decimal'">
+                      <span class="clip" [title]="show(r, c)">{{ show(r, c) }}</span>
+                    </td>
+                  }
+                  <td class="actions">
+                    <a class="btn btn-link btn-sm" [routerLink]="['/tables', d.key, r[d.idField], 'edit']">Edit</a>
+                    <button type="button" class="btn btn-link btn-sm danger" (click)="toDelete.set(r)">Delete</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (pageCount() > 1) {
+          <div class="pager">
+            <span class="count">Page {{ currentPage() }} of {{ pageCount() }}</span>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="prev()" [disabled]="currentPage() <= 1">Previous</button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="next()" [disabled]="currentPage() >= pageCount()">Next</button>
+          </div>
+        }
+      }
+    </section>
+  </div>
+
+  @if (toDelete(); as target) {
+    <app-confirm-dialog
+      [heading]="'Delete this ' + d.singular + '?'"
+      [message]="'“' + rowName(target) + '” will be permanently removed.'"
+      [confirmLabel]="'Delete ' + d.singular"
+      [busy]="deleting()"
+      (confirmed)="confirmDelete()"
+      (cancelled)="toDelete.set(null)" />
+  }
+}
